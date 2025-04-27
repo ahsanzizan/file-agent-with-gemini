@@ -1,4 +1,4 @@
-# file-agent-with-gemini
+# Friday Files
 
 A TypeScript command-line tool that uses Google's Gemini AI to help you manage your files intelligently. This tool allows you to describe file operations in natural language and automatically executes them. This project is very experimental.
 
