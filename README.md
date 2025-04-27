@@ -28,7 +28,7 @@ A TypeScript command-line tool that uses Google's Gemini AI to help you manage y
 3. Set your Google Gemini API key:
 
    - Get an API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - Update the API key in the `genAI` configuration in `.env` file
+   - Update the API key configuration in the `.env` file
 
 4. Build the project:
    ```bash
@@ -40,7 +40,13 @@ A TypeScript command-line tool that uses Google's Gemini AI to help you manage y
 Run the tool:
 
 ```bash
-npm start
+pnpm start
+```
+
+or
+
+```bash
+pnpm dev
 ```
 
 ### Commands
