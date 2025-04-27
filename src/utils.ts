@@ -1,0 +1,108 @@
+import * as fs from "fs";
+import * as path from "path";
+import * as readline from "readline";
+import { Action } from "./types";
+
+export const loadFileTree = (rootPath: string = "."): string => {
+  let tree = "";
+
+  function walk(dirPath: string, prefix: string = ""): void {
+    const entries = fs.readdirSync(dirPath).sort();
+
+    entries.forEach((entry, idx) => {
+      const isLast = idx === entries.length - 1;
+      const fullPath = path.join(dirPath, entry);
+      const connector = isLast ? "└── " : "├── ";
+      const stats = fs.statSync(fullPath);
+
+      if (stats.isDirectory()) {
+        tree += `${prefix}${connector}📁 ${entry}/\n`;
+        walk(fullPath, prefix + (isLast ? "    " : "│   "));
+      } else {
+        tree += `${prefix}${connector}📄 ${entry}\n`;
+      }
+    });
+  }
+
+  tree += "📂 /\n";
+  walk(rootPath);
+  return tree;
+};
+
+export const prettyPrintPlan = (plan: Action[]): void => {
+  console.log("\n🗺 Planned Actions:");
+  plan.forEach((action, idx) => {
+    console.log(`${idx + 1}. ${action.action} - ${JSON.stringify(action)}`);
+  });
+};
+
+export const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+export const buildPrompt = (fileTree: string, userInput: string) => `
+You are a file management AI agent.
+
+Your job is to PLAN file operations based on user instructions.
+
+Supported actions:
+- move: Move a file or folder.
+- copy: Copy a file or folder.
+- delete: Delete a file or folder.
+- compress: Compress multiple files into a zip archive.
+- rename: Rename a file or folder.
+
+Known file categories based on extensions:
+- Documents: .pdf, .docx, .xlsx, .pptx, .txt
+- Images: .jpg, .jpeg, .png, .gif, .bmp, .svg
+- Videos: .mp4, .avi, .mov, .mkv
+- Audio: .mp3, .wav, .aac, .flac
+- Archives: .zip, .rar, .7z, .tar.gz
+- Code: .py, .js, .ts, .html, .css, .java
+
+Rules:
+- ALWAYS respond with a JSON array of planned actions.
+- If an action is not yet implemented by the system, still plan it clearly.
+- NEVER explain your reasoning, only output JSON.
+
+File system structure:
+
+${fileTree}
+
+User instruction:
+${userInput}
+
+Example output format:
+[
+  {
+    "action": "move",
+    "source": "/documents/reports/quarterly.pdf",
+    "destination": "/archive/2025/reports/quarterly_q1.pdf"
+  },
+  {
+    "action": "copy",
+    "source": "/images/logo.png",
+    "destination": "/website/assets/images/logo.png"
+  },
+  {
+    "action": "delete",
+    "source": "/temp/old_backups",
+    "destination": ""
+  },
+  {
+    "action": "rename",
+    "source": "/projects/project_x.docx",
+    "destination": "/projects/client_proposal_2025.docx"
+  },
+  {
+    "action": "compress",
+    "sources": [
+      "/documents/contracts/2025_q1.pdf", 
+      "/documents/contracts/2025_q2.pdf",
+      "/documents/contracts/attachments"
+    ],
+    "destination": "/archive/contracts_2025_h1.zip"
+  }
+]
+`;
