@@ -69,8 +69,12 @@ export const executeActions = async (
       );
 
       const normalizeActionPath = (p: string) => {
-        // Strip leading / if present
-        p = p.startsWith("/") ? p.substring(1) : p;
+        if (p.startsWith(rootPath)) {
+          return p;
+        }
+
+        p = p.replace(/^[\/\\]/, "");
+
         return path.join(rootPath, p);
       };
 

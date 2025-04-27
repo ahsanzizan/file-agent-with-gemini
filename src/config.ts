@@ -35,6 +35,7 @@ export const generationConfig: GenerationConfig = {
             "The destination to store the output at (if there is any).",
         },
       },
+      required: ["action", "source", "sources", "destination"],
     },
     description: "Array of actions plan.",
   },
