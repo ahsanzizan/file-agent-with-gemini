@@ -1,5 +1,7 @@
 import { GenerationConfig, SchemaType } from "@google/generative-ai";
 
+export const modelName = "gemini-2.0-flash";
+
 export const generationConfig: GenerationConfig = {
   temperature: 1,
   topP: 1,

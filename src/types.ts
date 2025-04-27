@@ -5,7 +5,7 @@ interface BaseAction<T extends ActionType> {
   action: T;
 }
 
-interface FileAction extends BaseAction<FileActionType> {
+export interface FileAction extends BaseAction<FileActionType> {
   source: string;
   destination: string;
 }

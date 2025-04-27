@@ -1,133 +1,102 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { generationConfig } from "./config";
-import { executeActions } from "./execute";
-import { genAI } from "./google-genai";
+import { COMMANDS, MESSAGES } from "./constants";
 import { Action } from "./types";
-import { buildPrompt, loadFileTree, prettyPrintPlan, rl } from "./utils";
-
-export const askGemini = async (userInput: string, fileTree: string) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-  const prompt = buildPrompt(fileTree, userInput);
-
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig,
-  });
-  const response = result.response;
-  const text = response.text();
-
-  const output = JSON.parse(text) as Action[];
-  return output;
-};
+import { executeActions } from "./utils/actions-executor";
+import { askGemini } from "./utils/ask-gemini";
+import { loadFileTree } from "./utils/file-tree-loader";
+import { prettyPrintPlan, rl } from "./utils/utils";
 
 const main = async () => {
   const askForRootDir = async (): Promise<string> => {
     return new Promise((resolve) => {
-      rl.question(
-        "Enter root directory path (default: current directory): ",
-        (input) => {
-          const rootDir = input.trim() || ".";
-
-          if (!fs.existsSync(rootDir)) {
-            console.log(
-              `❌ Directory '${rootDir}' does not exist. Please try again.`
-            );
-            resolve(askForRootDir());
-          } else if (!fs.statSync(rootDir).isDirectory()) {
-            console.log(
-              `❌ '${rootDir}' is not a directory. Please try again.`
-            );
-            resolve(askForRootDir());
-          } else {
-            const absolutePath = path.resolve(rootDir);
-            console.log(`✅ Using root directory: ${absolutePath}`);
-            resolve(absolutePath);
-          }
+      rl.question(MESSAGES.ENTER_ROOT_DIR, (input) => {
+        const rootDir = input.trim() || ".";
+        if (!fs.existsSync(rootDir)) {
+          console.log(MESSAGES.DIR_NOT_EXIST(rootDir));
+          resolve(askForRootDir());
+        } else if (!fs.statSync(rootDir).isDirectory()) {
+          console.log(MESSAGES.NOT_A_DIR(rootDir));
+          resolve(askForRootDir());
+        } else {
+          const absolutePath = path.resolve(rootDir);
+          console.log(MESSAGES.USING_DIR(absolutePath));
+          resolve(absolutePath);
         }
-      );
+      });
     });
   };
 
-  const rootPath = await askForRootDir();
+  let rootPath = await askForRootDir();
   let fileTree = loadFileTree(rootPath);
   let currentPlan: Action[] = [];
 
   const promptUser = () => {
-    console.log("\nCommands:");
-    console.log("  list                - List current files");
-    console.log("  ask [prompt]        - Ask Gemini to plan actions");
-    console.log("  show                - Show current planned actions");
-    console.log("  execute             - Execute planned actions");
-    console.log("  root                - Change root directory");
-    console.log("  exit                - Quit");
+    console.log(MESSAGES.COMMAND_LIST);
 
-    rl.question("\n> ", async (command) => {
-      if (command === "list") {
-        // Reload the file tree in case it changed
+    rl.question("\n> ", async (input) => {
+      const trimmedCommand = input.trim();
+
+      if (trimmedCommand === COMMANDS.LIST) {
         fileTree = loadFileTree(rootPath);
         console.log(fileTree);
         promptUser();
-      } else if (command.startsWith("ask ")) {
-        const userInput = command.substring(4);
+      } else if (trimmedCommand.startsWith(`${COMMANDS.ASK} `)) {
+        const userPrompt = trimmedCommand.substring(COMMANDS.ASK.length + 1);
         try {
-          const geminiOutput = await askGemini(userInput, fileTree);
+          const geminiOutput = await askGemini(userPrompt, fileTree);
           try {
             currentPlan = geminiOutput;
             prettyPrintPlan(currentPlan);
-          } catch (err) {
-            console.log("❌ Failed to parse Gemini output!");
+          } catch (parseErr) {
+            console.log(MESSAGES.FAILED_PARSE_OUTPUT);
             console.log("Raw output:", geminiOutput);
           }
         } catch (err) {
-          console.error("❌ Error communicating with Google Gemini:", err);
+          console.error(MESSAGES.ERROR_GEMINI, err);
         }
         promptUser();
-      } else if (command === "show") {
+      } else if (trimmedCommand === COMMANDS.SHOW) {
         if (currentPlan.length > 0) {
           prettyPrintPlan(currentPlan);
         } else {
-          console.log("⚠️  No actions planned yet!");
+          console.log(MESSAGES.NO_ACTIONS_PLANNED);
         }
         promptUser();
-      } else if (command === "execute") {
+      } else if (trimmedCommand === COMMANDS.EXECUTE) {
         if (currentPlan.length > 0) {
           try {
             await executeActions(currentPlan, rootPath);
-            // Refresh the file tree after execution
             fileTree = loadFileTree(rootPath);
           } catch (err) {
-            console.error("❌ Error during execution:", err);
+            console.error(MESSAGES.ERROR_EXECUTION, err);
           }
         } else {
-          console.log("⚠️  No actions to execute!");
+          console.log(MESSAGES.NO_ACTIONS_TO_EXECUTE);
         }
         promptUser();
-      } else if (command === "root") {
-        // Change root directory
+      } else if (trimmedCommand === COMMANDS.ROOT) {
         const newRootPath = await askForRootDir();
         if (newRootPath !== rootPath) {
-          fileTree = loadFileTree(newRootPath);
-          currentPlan = []; // Clear the current plan as it's for the old root
+          rootPath = newRootPath;
+          fileTree = loadFileTree(rootPath);
+          currentPlan = [];
         }
         promptUser();
-      } else if (command === "exit") {
-        console.log("👋 Goodbye!");
+      } else if (trimmedCommand === COMMANDS.EXIT) {
+        console.log(MESSAGES.GOODBYE);
         rl.close();
       } else {
-        console.log("❓ Unknown command!");
+        console.log(MESSAGES.UNKNOWN_COMMAND);
         promptUser();
       }
     });
   };
 
-  // Show initial file tree
-  console.log("\n📂 Current file structure:");
+  console.log(MESSAGES.CURRENT_FILE_STRUCTURE);
   console.log(fileTree);
 
-  // Start the command loop
   promptUser();
 };
 
