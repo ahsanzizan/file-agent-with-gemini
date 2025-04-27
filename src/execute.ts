@@ -162,7 +162,7 @@ export const executeActions = async (
         }
 
         default:
-          console.log(`⚠️ Unknown action type: ${action.action}`);
+          console.log(`⚠️ Unknown action type: ${(action as Action).action}`);
       }
     } catch (error) {
       console.error(`❌ Error executing action: ${error}`);

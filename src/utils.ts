@@ -30,9 +30,15 @@ export const loadFileTree = (rootPath: string = "."): string => {
 };
 
 export const prettyPrintPlan = (plan: Action[]): void => {
-  console.log("\n🗺 Planned Actions:");
+  console.log("\n🗺  Planned Actions:");
   plan.forEach((action, idx) => {
-    console.log(`${idx + 1}. ${action.action} - ${JSON.stringify(action)}`);
+    console.log(
+      `${idx + 1}. ${action.action.toUpperCase()} ${
+        action.action === "compress"
+          ? JSON.stringify(action.sources)
+          : action.source
+      } ${action.destination ? `-> ${action.destination}` : ""}`
+    );
   });
 };
 
