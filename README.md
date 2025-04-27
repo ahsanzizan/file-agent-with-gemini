@@ -15,8 +15,8 @@ A TypeScript command-line tool that uses Google's Gemini AI to help you manage y
 1. Clone this repository:
 
    ```bash
-   git clone https://github.com/ahsanzizan/file-agent-with-gemini.git
-   cd file-agent-with-gemini
+   git clone https://github.com/ahsanzizan/friday-files.git
+   cd friday-files
    ```
 
 2. Install dependencies:
