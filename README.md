@@ -2,6 +2,8 @@
 
 A TypeScript command-line tool that uses Google's Gemini AI to help you manage your files intelligently. This tool allows you to describe file operations in natural language and automatically executes them. This project is very experimental.
 
+> This is a file-system AI agent powered by Google Gemini. It can understand user requests, plan file operations, and execute them autonomously.
+
 ## Features
 
 - **AI-Powered**: Describe what you want to do with your files in plain English, and let Gemini figure out the steps
